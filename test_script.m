@@ -5,21 +5,29 @@ function test_script
 close all;
 %% Network Test
 %create first node in network
-network = adhoc_network(AccessPoint([0 0 0], AntennaConfiguration('Linear', 50, 0, 20e6)));
+%128 channels 
+%network = adhoc_network(AccessPoint([0 0 0], AntennaConfiguration('Linear', 10, 0, 5e6)));
+%16 channels
+network = adhoc_network(AccessPoint([0 0 0], AntennaConfiguration('Linear', 10, 0, 600e3)));
 %add additional nodes
-network.nodes = AccessPoint([5000 10000 0], AntennaConfiguration('Circular', 10, 0, 20e6));
+network.nodes = AccessPoint([5000 10000 0], AntennaConfiguration('Circular', 10, 0, 5e6));
 network.nodes = AccessPoint([10000 5000 0]);
 network.nodes = AccessPoint([-12000 7000 0]);
 % network.nodes = AccessPoint([0 0 10000]);
 % network.nodes = AccessPoint([10000 10000 10000]);
+
+%Calculate AoA for node 1
+[d,az,el] = network.CalculateEnvironment;
+angle = az(1,:)*180/pi %#ok<NOPRT>
 
 %Calculate input at node 1 array
 array_waveform = network.CalculateArrayInput(1);
 
 %CMA algorithm
 bf = CMABeamformer(network.nodes(1).OFDM_inst);
-bf.FrequencyDomainCMA(network.nodes(1).AntennaConfiguration, network.nodes(1).OFDM_inst, array_waveform, 0.01);
-bf.TimeDomainCMA(network.nodes(1).AntennaConfiguration, network.nodes(1).OFDM_inst, array_waveform, 0.01);
+%128 channelsbf.FrequencyDomainCMA(network.nodes(1).AntennaConfiguration, network.nodes(1).OFDM_inst, array_waveform, 0.0005);
+bf.FrequencyDomainCMA(network.nodes(1).AntennaConfiguration, network.nodes(1).OFDM_inst, array_waveform, 0.001);
+%bf.TimeDomainCMA(network.nodes(1).AntennaConfiguration, network.nodes(1).OFDM_inst, array_waveform, 0.00001);
 
 %K-Omega plot of input at node 1 array
 L = 1024;

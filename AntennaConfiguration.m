@@ -206,7 +206,7 @@ classdef AntennaConfiguration
             BP = w'*V;
             
             %plot beam pattern
-            figure;
+            %figure;
             plot(180*az/pi,10*log10(abs(BP).^2));
             title('Beampattern');
             xlabel('Azimuth');

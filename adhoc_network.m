@@ -116,11 +116,11 @@ classdef adhoc_network
             end
             
             %transform back to time domain and take the real portion
-            n=sqrt(1000)*randn(size(cumulative_fft));
+            n = 0;%sqrt(1000)*randn(size(cumulative_fft));
             
             %cumulative_fft is a Nxlength matrix.  Take IFFT across rows
-            %array_waveform = real(ifft(cumulative_fft,[],2)) + n;
-            array_waveform = (ifft(cumulative_fft,[],2)) + n;
+            array_waveform = real(ifft(cumulative_fft,[],2)) + n;
+            %array_waveform = (ifft(cumulative_fft,[],2)) + n;
         end   
         
         %PlotEnvironment(K) plots the nodes in the network

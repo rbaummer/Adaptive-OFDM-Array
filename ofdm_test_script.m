@@ -9,6 +9,8 @@ OFDM_inst = OFDM(128, [1 8 32 48 64 65 86 128],512,224e-6,28e-6,2);
 OFDM_inst.assigned_channels = 1:128;
 OFDM_inst.waveform = 100;
 
+f = OFDM_inst.CalculateCenterFrequencies;
+
 % CMA = CMABeamformer(OFDM_inst);
 % 
 % t = 0:1/2048:1-1/2048;

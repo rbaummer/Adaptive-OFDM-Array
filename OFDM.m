@@ -188,93 +188,19 @@ classdef OFDM
         %Synchronize the OFDM symbols at the higher sample rate
         %and return the parallelized form after removing the CP.
         %One symbol per column
-        function parallel_waveform = serialtoparallel(obj, waveform)
-            %length of waveform
-            l = length(waveform);
+        function ofdm_sym = serialtoparallel(obj, waveform)
             %make sure waveform is a column vector
             waveform = waveform(:);
             
-            %find time synchronizaiton at baseband
-            %generate carrier
-            t = obj.Ts/(obj.L*obj.N)*(0:l-1)';
-            carrier = exp(-1i*2*pi*obj.Fc*t);
-            
-            %downconvert back to baseband
-            wf = carrier.*waveform;
-            
-            %Cyclic prefix size
-            CP_size = round(obj.Tg/(obj.Ts/obj.N))*obj.L;
-            frame_size = obj.N*obj.L + CP_size;
-            
-            %interpolated N
-            N_interp = obj.N*obj.L;
+            %Downconvert the passpand signal to baseband and downsample to
+            %OFDM symbol size
+            baseband_waveform = obj.down_conversion(waveform);
             
             %time synchronization
-            %since the cylic prefix is a repetition of the end of the OFDM
-            %frame a correlation separated by N peaks at the end of the CP
-            for i = 1:2*N_interp + CP_size
-            %for i = 1:length(wf)-obj.N-CP_size%2*obj.N + CP_size
-               %correlation value corrected by the average power
-               corr(i) = sum(wf(i:i+CP_size-1).*conj(wf(i+N_interp:i+N_interp+CP_size-1)));
-               pavg(i) = 0.5*sum(abs(wf(i:i+CP_size-1)).^2 + abs(wf(i+N_interp:i+N_interp+CP_size-1)).^2);
-            end
+            time_offset = obj.time_synchronizaiton(baseband_waveform);
             
-            %time offset to beginning of OFDM frame is the maximum of the
-            %correlation function
-            [~,time_offset] = max(abs(corr) - pavg);
-            
-%             figure;
-%             plot(abs(corr)-pavg);
-                  
-            %loop until no more frames to process
-            i = 1;  %loop counter
-            %subtract skipped samples from beginning
-            l = l - time_offset;   
-            while l > frame_size
-                %grab frame size baseband time domain bits
-                ofdm_sym_cp = waveform(i*time_offset:i*time_offset + frame_size-1);
-                %remove cyclic prefix
-                ofdm_sym = ofdm_sym_cp(CP_size+1:end);
-                
-                parallel_waveform(:,i) = ofdm_sym(:);
-                
-                %subtract frame size from total samples
-                l = l - frame_size;
-                i = i + 1;
-            end
-            
-%             %test demodulate
-%             l = length(parallel_waveform(:,1));
-%             
-%             %generate carrier
-%             t = obj.Ts/(obj.L*obj.N)*(0:l-1)';
-%             carrier = exp(-1i*2*pi*obj.Fc*t);
-%             
-%             %downconvert back to baseband
-%             wf_baseband = carrier.*parallel_waveform(:,1);
-%             
-%             %decimate by interpolation factor
-%             wf = decimate(wf_baseband, obj.L);
-%             
-%             OFDM_sym = fft(wf);
-%             
-%             %estimate the channel from pilots
-%             %interpolate across all obj.channels
-%             H = obj.channel_equalization(OFDM_sym);            
-% 
-%             %midpoint of channels
-%             mid = floor(obj.channels/2);
-%             %remove obj.N-obj.channels zeros(+noise) from symbol
-%             OFDM_sym(mid+1:obj.N-mid) = [];
-%             
-%             %remove channel based on estimate
-%             OFDM_sym = OFDM_sym.*H./abs(H).^2;
-%             
-%             %remove pilots
-%             OFDM_sym(obj.pilot_channels) = [];
-%             
-%             %scatterplot of test demodulated symbol
-%             scatterplot(OFDM_sym);
+            %serial to parallel operation forming time domain OFDM symbols
+            ofdm_sym = obj.framing(baseband_waveform, time_offset);
         end
 
         %Generate scatter plots of waveform
@@ -359,7 +285,7 @@ classdef OFDM
             %time offset to beginning of OFDM frame is the maximum of the
             %correlation function
             [~,time_offset] = max(abs(corr) - pavg);
-            
+            time_offset
 %             figure;
 %             plot(abs(corr)-pavg);
         end
@@ -376,14 +302,15 @@ classdef OFDM
             
              %loop until no more frames to process
              %loop until no more frames to process
-            i = 1;  %loop counter
+            i = 0;  %loop counter
             %subtract skipped samples from beginning
             len = len - time_offset;   
             while len > frame_size
+                index = i*frame_size + time_offset;
                 %grab frame size baseband time domain bits
-                ofdm_sym_cp = waveform(i*time_offset:i*time_offset + frame_size-1);
+                ofdm_sym_cp = waveform(index:index + frame_size-1);
                 %remove cyclic prefix
-                ofdm_sym(:,i) = ofdm_sym_cp(CP_size+1:end);
+                ofdm_sym(:,i+1) = ofdm_sym_cp(CP_size+1:end);
                 
                 len = len - frame_size;
                 i = i + 1;
