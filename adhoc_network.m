@@ -115,12 +115,22 @@ classdef adhoc_network
                 end
             end
             
-            %transform back to time domain and take the real portion
-            n = 0;%sqrt(1000)*randn(size(cumulative_fft));
-            
+            %transform back to time domain and take the real portion           
             %cumulative_fft is a Nxlength matrix.  Take IFFT across rows
-            array_waveform = real(ifft(cumulative_fft,[],2)) + n;
-            %array_waveform = (ifft(cumulative_fft,[],2)) + n;
+            waveform = real(ifft(cumulative_fft,[],2));
+            %waveform = (ifft(cumulative_fft,[],2));
+            
+            %signal power mean at each antenna
+            p = mean(abs(waveform),2);
+            %siganl power mean
+            p_avg = mean(p);
+            
+            %generate noise at SNR
+            SNR = -30;
+            n = sqrt(10^(SNR/20)*p_avg)*randn(size(waveform));
+            
+            %return signal + noise at each antenna
+            array_waveform = waveform + n;
         end   
         
         %PlotEnvironment(K) plots the nodes in the network

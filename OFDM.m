@@ -175,14 +175,14 @@ classdef OFDM
             %assign generated waveform to class property
             waveform = real(wf_baseband.*carrier(1:length(wf_baseband)));
 
-%             %debug plots
-%             figure;
-%             subplot(3,1,1)
-%             pwelch(wf, [], [], [], 1/(obj.Ts/(obj.N)));
-%             subplot(3,1,2)
-%             pwelch(wf_baseband, [], [], [], 1/(obj.Ts/(obj.L*obj.N)));
-%             subplot(3,1,3)
-%             pwelch(waveform, [], [], [], 1/(obj.Ts/(obj.L*obj.N)));
+            %debug plots
+            figure;
+            subplot(3,1,1)
+            pwelch(wf, [], [], [], 1/(obj.Ts/(obj.N)));
+            subplot(3,1,2)
+            pwelch(wf_baseband, [], [], [], 1/(obj.Ts/(obj.L*obj.N)));
+            subplot(3,1,3)
+            pwelch(waveform, [], [], [], 1/(obj.Ts/(obj.L*obj.N)));
         end
         
         %Synchronize the OFDM symbols at the higher sample rate
@@ -285,7 +285,7 @@ classdef OFDM
             %time offset to beginning of OFDM frame is the maximum of the
             %correlation function
             [~,time_offset] = max(abs(corr) - pavg);
-            time_offset
+%             time_offset
 %             figure;
 %             plot(abs(corr)-pavg);
         end
@@ -374,7 +374,8 @@ classdef OFDM
             
             %lower_frequency is the center frequency of the first channel
             %so subtract 1 from assigned_channels
-            f = (obj.assigned_channels-1)*obj.delta_f + lower_frequency;            
+            %f = (obj.assigned_channels-1)*obj.delta_f + lower_frequency;            
+            f = (1:obj.channels)*obj.delta_f + lower_frequency;            
         end
     end
 end

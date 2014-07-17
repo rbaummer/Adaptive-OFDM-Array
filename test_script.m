@@ -25,8 +25,8 @@ array_waveform = network.CalculateArrayInput(1);
 
 %CMA algorithm
 bf = CMABeamformer(network.nodes(1).OFDM_inst);
-%128 channelsbf.FrequencyDomainCMA(network.nodes(1).AntennaConfiguration, network.nodes(1).OFDM_inst, array_waveform, 0.0005);
-bf.FrequencyDomainCMA(network.nodes(1).AntennaConfiguration, network.nodes(1).OFDM_inst, array_waveform, 0.001);
+%128 channels bf.CMA_FrequencyDomain(network.nodes(1).AntennaConfiguration, network.nodes(1).OFDM_inst, array_waveform, 0.0005);
+w = bf.oCMA_FrequencyDomain(network.nodes(1).AntennaConfiguration, network.nodes(1).OFDM_inst, array_waveform, 0.01);
 %bf.TimeDomainCMA(network.nodes(1).AntennaConfiguration, network.nodes(1).OFDM_inst, array_waveform, 0.00001);
 
 %K-Omega plot of input at node 1 array
@@ -56,6 +56,4 @@ network.nodes(1).OFDM_inst.demodulate(sum(array_waveform,1));
 % network.nodes(3).AntennaConfiguration.PlotBeampattern2D(0);
 % network.nodes(1).AntennaConfiguration.PlotBeampattern3D;
 % network.nodes(2).AntennaConfiguration.PlotBeampattern3D;
-
-temp = 1;
 
