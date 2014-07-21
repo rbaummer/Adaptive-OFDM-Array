@@ -24,10 +24,10 @@ classdef AccessPoint
     properties(Constant = true, Hidden = true)
         %16 Channels, FFT size 64, Ts 224us, Tg 224 us, Mn 2
         %OFDM_default = OFDM(16, [1 8 9 16],64,224e-6,224e-6,2);
-        OFDM_default = OFDM(16, [1 8 9 16],64,224e-6,28e-6,2);
+        %OFDM_default = OFDM(16, [1 8 9 16],64,224e-6,28e-6,2);
         %128 channels, FFT size 512, Ts = 224us, Tg = 28us, Mn = 2
-        %pilot channels [1 32 64 65 96 128]
-        %OFDM_default = OFDM(128, [1 32 64 65 96 128],512,224e-6,28e-6,2);
+        %pilot channels [1 8 32 48 64 65 86 128]
+        OFDM_default = OFDM(128, [1 8 32 48 64 65 86 128],512,224e-6,28e-6,2);
         %OFDM_default = OFDM(512, [1 128 256 257 384 512],2048,224e-6,28e-6,2);
         AntennaConfiguration_default = AntennaConfiguration('Linear', 10, 0, 5e6);
     end
@@ -45,7 +45,7 @@ classdef AccessPoint
                 obj.OFDM_inst = obj.OFDM_default;
                 %obj.OFDM_inst.assigned_channels = 1:128;
                 obj.OFDM_inst.assigned_channels = 1:obj.OFDM_inst.channels;
-                obj.OFDM_inst.waveform = 10000;
+                obj.OFDM_inst.waveform = 2000;
             else
                 obj.OFDM_inst = OFDM_inst;
             end

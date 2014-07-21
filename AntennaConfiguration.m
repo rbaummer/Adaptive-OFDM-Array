@@ -67,6 +67,16 @@ classdef AntennaConfiguration
             V = exp(-1i*2*pi*obj.G*p*(1./lambda));
         end
         
+        %Return replica vector normalized for lambda/2 spacing
+        function V = CalculateNormalizedReplicaVector(obj, az)
+            pz = ((0:obj.N-1) - (obj.N-1)/2) * 0.5;
+            %angles in kz space, lambda normalized
+            lambda = 1;
+            kz = -2*pi./lambda*cos(az);
+            %replica vectors
+            V = exp(-1i*pz'*kz);
+        end
+        
         %Perform broadband simulation of waveform arriving at
         %array inputs.  Performs time shifts in frequency domain
         %Returns frequency domain so multiple signals can be summed
@@ -84,21 +94,27 @@ classdef AntennaConfiguration
             mid = round(len_fft/2)+1;
             %subtract Fs to set range to +/-Fs
             f(mid:end) = f(mid:end) - Fs;
-            lambda = 3e8./f;
+            lambda = 3e8./abs(f);
             
             %Calculate timeshifts in frequency domain
             %timeshift in frequency domain is exp(j*omega*t) which is 
             %equivalent to the replica vector for narrowband omega
             %Calculate replica vectors for each frequency bin of FFT
-            V = obj.CalculateReplicaVectors(az, el, lambda);
+            %V = obj.CalculateReplicaVectors(az, el, lambda);
+            V = obj.CalculateNormalizedReplicaVector(az);
             %V is array [Array size by len]
             [len_array,~] = size(V);
+            
+            %window time domain
+            %x = OFDM_inst.waveform.*feval('tukeywin',length(len_fft),0.1)';
+            %s = fft(x);
             
             %Frequency domain of broadband waveform from OFDM object
             s = fft(OFDM_inst.waveform);
             
             %each fft bin is multiplied by corresponding replica vector
-            waveform_fft = V.*(ones(len_array,1)*s.');            
+            %waveform_fft = V.*(ones(len_array,1)*s.');
+            waveform_fft = V*s.';
         end
         
         %K-Omega Plot (frequency vs wavenumber)
@@ -201,7 +217,8 @@ classdef AntennaConfiguration
             el = el*ones(1,1025);
             
             %Replica vectors for array
-            V = obj.CalculateReplicaVectors(az, el, lambda);
+            %V = obj.CalculateReplicaVectors(az, el, lambda);
+            V = obj.CalculateNormalizedReplicaVector(az);
             %Beampattern = weights'*ReplicaVectors
             BP = w'*V;
             

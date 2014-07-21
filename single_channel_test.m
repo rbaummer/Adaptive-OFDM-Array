@@ -61,6 +61,12 @@ s(:,4) = received_symbol(4, 1:len - 4);
 %received_symbol = 1/OFDM_inst5.N*fft(r);
 s(:,5) = received_symbol(5, 1:len - 4);
 
+%normalize the power across time and antennas
+p = mean(abs(s),1);
+for i = 1:5
+    s(:,i) = s(:,i)./p(i);
+end
+
 s = s.';
 
 %% Array

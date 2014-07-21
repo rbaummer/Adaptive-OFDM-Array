@@ -42,24 +42,29 @@ OFDM_inst5.waveform = len;
 
 %% broadband simulation of array inputs
 ant = AntennaConfiguration('Linear', 10, 0, 600e3);
+%Ts = OFDM_inst1.Ts/(OFDM_inst1.L*OFDM_inst1.N);
+%Fs = 1/Ts;
+%ant = AntennaConfiguration('Linear', 10, 0, Fs);
 
-w1_fft = ant.BroadbandSimulation(angle(1),0,OFDM_inst1);
-w2_fft = ant.BroadbandSimulation(angle(2),0,OFDM_inst2);
-w3_fft = ant.BroadbandSimulation(angle(3),0,OFDM_inst3);
-w4_fft = ant.BroadbandSimulation(angle(4),0,OFDM_inst4);
-w5_fft = ant.BroadbandSimulation(angle(5),0,OFDM_inst5);
+w1_fft = ant.BroadbandSimulation(angles(1),0,OFDM_inst1);
+w2_fft = ant.BroadbandSimulation(angles(2),0,OFDM_inst2);
+w3_fft = ant.BroadbandSimulation(angles(3),0,OFDM_inst3);
+w4_fft = ant.BroadbandSimulation(angles(4),0,OFDM_inst4);
+w5_fft = ant.BroadbandSimulation(angles(5),0,OFDM_inst5);
 
 w_fft = w1_fft + w2_fft + w3_fft + w4_fft + w5_fft;
+
+wf = (ifft(w_fft,[],2));
 
 %signal power mean at each antenna
 p = mean(abs(w_fft),2);
 %siganl power mean
 p_avg = mean(p);
 
-SNR = -30;
-n = 0;%sqrt(10^(SNR/20)*p_avg)*randn(size(w_fft));
+SNR = -20;
+n = sqrt(10^(SNR/20)*p_avg)*randn(size(w_fft));
 
-waveform = real(ifft(w_fft,[],2)) + n;
+waveform = wf + n;
 
 %%
 for i = 1:ant.N
@@ -72,13 +77,15 @@ for i = 1:ant.N
     s(:,:,i) = received_symbol(:, 1:OFDM_inst1.num_symbols - 4);
 end
 
+s(9:56,:,:) = [];
+
 %normalize the power across time and antennas
-p = mean(mean(abs(s),2),3);
-for i = 1:OFDM_inst1.N
+p = mean(mean(abs(s),2),3)/2 %#ok<NOPRT>
+for i = 1:OFDM_inst1.channels
     s(i,:,:) = s(i,:,:)/p(i);
 end
 
-x = squeeze(s(1,:,:)).';
+x = squeeze(s(16,:,:)).';
 
 %%
 

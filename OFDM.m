@@ -45,10 +45,10 @@ classdef OFDM
         %Carrier to OFDM sample period ratio
         k = 2;
         %QPSK signal constellation from DVB-S standard
-        Sn_2bits = [1+1i; 1-1i; -1+1i; -1-1i];
-        Sn_3bits = [1; 1+1i; 1i; -1+1i; -1; -1-1i; -1i; 1-1i];
+        Sn_2bits = 2*[1+1i; 1-1i; -1+1i; -1-1i];
+        Sn_3bits = 2*[1; 1+1i; 1i; -1+1i; -1; -1-1i; -1i; 1-1i];
         %16 QAM signal constellation from DVB-S standard
-        Sn_4bits = [3+3i; 3+1i; 1+3i; 1+1i; 3-3i; 3-1i; 1-3i; 1-1i; -3+3i; -3+1i; -1+3i; -1+1i; -3-3i; -3-1i; -1-3i; -1-1i];
+        Sn_4bits = 2*[3+3i; 3+1i; 1+3i; 1+1i; 3-3i; 3-1i; 1-3i; 1-1i; -3+3i; -3+1i; -1+3i; -1+1i; -3-3i; -3-1i; -1-3i; -1-1i];
     end
 
     methods
@@ -174,15 +174,16 @@ classdef OFDM
 
             %assign generated waveform to class property
             waveform = real(wf_baseband.*carrier(1:length(wf_baseband)));
+            %waveform = (wf_baseband.*carrier(1:length(wf_baseband)));
 
             %debug plots
-            figure;
-            subplot(3,1,1)
-            pwelch(wf, [], [], [], 1/(obj.Ts/(obj.N)));
-            subplot(3,1,2)
-            pwelch(wf_baseband, [], [], [], 1/(obj.Ts/(obj.L*obj.N)));
-            subplot(3,1,3)
-            pwelch(waveform, [], [], [], 1/(obj.Ts/(obj.L*obj.N)));
+%             figure;
+%             subplot(3,1,1)
+%             pwelch(wf, [], [], [], 1/(obj.Ts/(obj.N)));
+%             subplot(3,1,2)
+%             pwelch(wf_baseband, [], [], [], 1/(obj.Ts/(obj.L*obj.N)));
+%             subplot(3,1,3)
+%             pwelch(waveform, [], [], [], 1/(obj.Ts/(obj.L*obj.N)));
         end
         
         %Synchronize the OFDM symbols at the higher sample rate
@@ -206,46 +207,61 @@ classdef OFDM
         %Generate scatter plots of waveform
         %note waveform does not need to be the obj.waveform but it should
         %be the same length
+        %can also handle frequency domain symbols (after CMA beamforming)
         function OFDM_sym = demodulate(obj, waveform)
-            %make sure waveform is a column vector
-            waveform = waveform(:);
-            
-            %Downconvert the passpand signal to baseband and downsample to
-            %OFDM symbol size
-            baseband_waveform = obj.down_conversion(waveform);
-            
-            %debug plots
-            figure;
-            pwelch(baseband_waveform, [], [], [], 1/(obj.Ts/obj.N));
-            
-            %time synchronization
-            time_offset = obj.time_synchronizaiton(baseband_waveform);
-            
-            %serial to parallel operation forming time domain OFDM symbols
-            ofdm_sym = obj.framing(baseband_waveform, time_offset);
-            
-            %generate frequency domain symbols from time domain using FFT
-            OFDM_sym = fft(ofdm_sym,obj.N);
-            
-            %estimate the channel from pilots
-            %interpolate across all obj.channels
-            H = obj.channel_equalization(OFDM_sym(:,1));            
+            %check whether synchronization and framing needs to be done
+            if isvector(waveform)
+                %make sure waveform is a column vector
+                waveform = waveform(:);
 
-            %midpoint of channels
-            mid = floor(obj.channels/2);
-            %remove obj.N-obj.channels zeros(+noise) from symbol
-            OFDM_sym(mid+1:obj.N-mid,:) = [];
+                %Downconvert the passpand signal to baseband and downsample to
+                %OFDM symbol size
+                baseband_waveform = obj.down_conversion(waveform);
+
+                %debug plots
+                figure;
+                pwelch(baseband_waveform, [], [], [], 1/(obj.Ts/obj.N));
+
+                %time synchronization
+                time_offset = obj.time_synchronizaiton(baseband_waveform);
+
+                %serial to parallel operation forming time domain OFDM symbols
+                ofdm_sym = obj.framing(baseband_waveform, time_offset);
+
+                %generate frequency domain symbols from time domain using FFT
+                OFDM_sym = fft(ofdm_sym,obj.N);
+                
+                %estimate the channel from pilots
+                %interpolate across all obj.channels
+                H = obj.channel_equalization(OFDM_sym(:,1));            
+
+                %midpoint of channels
+                mid = floor(obj.channels/2);
+                %remove obj.N-obj.channels zeros(+noise) from symbol
+                OFDM_sym(mid+1:obj.N-mid,:) = [];
+            %synchronization and framing already done
+            %zero symbols from IFFT interpolation already removed
+            else
+                %CMA beamformer already handled time synchronization and
+                %framing
+                OFDM_sym = waveform;
+                
+                %estimate the channel from pilots
+                %interpolate across all obj.channels
+                H = obj.channel_equalization(OFDM_sym(:,1));            
+            end
             
             %remove channel based on estimate
             for i = 1:size(OFDM_sym,2)
-                OFDM_sym(:,i) = OFDM_sym(:,i).*H./abs(H).^2;
+                %OFDM_sym(:,i) = OFDM_sym(:,i).*H./abs(H).^2;
+                OFDM_sym(:,i) = OFDM_sym(:,i).*H./abs(H);
             end
             
             %remove pilots
             OFDM_sym(obj.pilot_channels,:) = [];
             
             %generate scatter plots
-            scatterplot(OFDM_sym(:,1));
+            scatterplot(OFDM_sym(:));
         end
         
         %Perform downconversion of waveform: Heterodyne to baseband and
@@ -326,8 +342,14 @@ classdef OFDM
             mid = floor(obj.channels/2);
             %upper index of lower pilot channels
             m = length(obj.pilot_channels(obj.pilot_channels <= mid));
-            %calculate indices of pilot channels in size N symbol
-            pilot_index = [obj.pilot_channels(1:m) (obj.N - obj.channels) + obj.pilot_channels(m+1:end)];
+            %check if zero (interpolation) channels are still present
+            if length(OFDM_sym) == obj.N
+                %calculate indices of pilot channels in size N symbol
+                pilot_index = [obj.pilot_channels(1:m) (obj.N - obj.channels) + obj.pilot_channels(m+1:end)];
+            else
+                %indices of pilots after noise channels have been removed
+                pilot_index = obj.pilot_channels;
+            end
             
             %extract pilot symbols
             pilots = OFDM_sym(pilot_index);

@@ -4,30 +4,13 @@ function ofdm_test_script
 
 close all;
 
-OFDM_inst = OFDM(16, [1 8 9 16],64,224e-6,28e-6,2);
-OFDM_inst.assigned_channels = 1:16;
-%OFDM_inst = OFDM(128, [1 8 32 48 64 65 86 128],512,224e-6,28e-6,2);
-%OFDM_inst.assigned_channels = 1:128;
-OFDM_inst.waveform = 10000;
+% OFDM_inst = OFDM(16, [1 8 9 16],64,224e-6,28e-6,2);
+% OFDM_inst.assigned_channels = 1:16;
+OFDM_inst = OFDM(128, [1 8 32 48 64 65 86 128],512,224e-6,28e-6,2);
+OFDM_inst.assigned_channels = 1:128;
+OFDM_inst.waveform = 1000;
 
 f = OFDM_inst.CalculateCenterFrequencies;
-
-% CMA = CMABeamformer(OFDM_inst);
-% 
-% t = 0:1/2048:1-1/2048;
-% x = exp(1i*2*pi*125*t);
-% 
-% figure;
-% plot(abs(fft(x.')),'g');
-% hold on;
-% plot(abs(CMA.F*x.'),'--r');
-% 
-% X = CMA.F*x.';
-% 
-% figure;
-% plot(real(x),'g');
-% hold on;
-% plot(real(CMA.G*X),'--r');
 
 OFDM_inst.demodulate(OFDM_inst.waveform);
 

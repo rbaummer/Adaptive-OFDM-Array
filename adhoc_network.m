@@ -117,8 +117,8 @@ classdef adhoc_network
             
             %transform back to time domain and take the real portion           
             %cumulative_fft is a Nxlength matrix.  Take IFFT across rows
-            waveform = real(ifft(cumulative_fft,[],2));
-            %waveform = (ifft(cumulative_fft,[],2));
+            %waveform = real(ifft(cumulative_fft,[],2));
+            waveform = ifft(cumulative_fft,[],2);
             
             %signal power mean at each antenna
             p = mean(abs(waveform),2);
